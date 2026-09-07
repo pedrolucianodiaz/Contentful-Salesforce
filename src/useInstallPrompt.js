@@ -1,43 +1,25 @@
 import { useEffect, useState } from 'react'
 
-// Encapsula la lógica de instalación de la PWA para reusarla en el banner
-// y en el botón de la barra superior.
+// En Android, Chrome gestiona la instalación de forma nativa (menú → "Instalar
+// aplicación" y su propio aviso), así que NO capturamos `beforeinstallprompt`
+// ni mostramos botón propio. En iPhone no existe esa opción automática, por eso
+// mostramos una ayuda propia. Este hook solo detecta la plataforma y si la app
+// ya está instalada.
 export function useInstallPrompt() {
-  const [deferred, setDeferred] = useState(null)
   const [installed, setInstalled] = useState(false)
 
   useEffect(() => {
-    const onPrompt = (e) => {
-      e.preventDefault() // evita el mini-banner por defecto de Chrome
-      setDeferred(e)
-    }
-    const onInstalled = () => {
-      setInstalled(true)
-      setDeferred(null)
-    }
-    window.addEventListener('beforeinstallprompt', onPrompt)
+    const onInstalled = () => setInstalled(true)
     window.addEventListener('appinstalled', onInstalled)
 
-    // ¿Ya está abierta como app instalada?
     const standalone =
       window.matchMedia('(display-mode: standalone)').matches ||
       window.navigator.standalone === true
     if (standalone) setInstalled(true)
 
-    return () => {
-      window.removeEventListener('beforeinstallprompt', onPrompt)
-      window.removeEventListener('appinstalled', onInstalled)
-    }
+    return () => window.removeEventListener('appinstalled', onInstalled)
   }, [])
 
   const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent)
-
-  async function promptInstall() {
-    if (!deferred) return
-    deferred.prompt()
-    await deferred.userChoice
-    setDeferred(null)
-  }
-
-  return { canInstall: !!deferred, isIos, installed, promptInstall }
+  return { isIos, installed }
 }

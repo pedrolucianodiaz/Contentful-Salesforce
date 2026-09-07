@@ -7,8 +7,9 @@ const ICON = `${import.meta.env.BASE_URL}icons/icon-192.png`
 const DISMISS_KEY = 'pwa-install-dismissed'
 const DISMISS_DAYS = 7
 
-// Banner-popup que aparece abajo invitando a instalar la app.
-function InstallBanner({ canInstall, isIos, installed, promptInstall }) {
+// Banner-popup con instrucciones de instalación. Solo se muestra en iPhone,
+// donde no hay instalación automática. En Android lo maneja Chrome de forma nativa.
+function InstallBanner({ isIos, installed }) {
   const [dismissed, setDismissed] = useState(() => {
     try {
       const t = localStorage.getItem(DISMISS_KEY)
@@ -18,10 +19,7 @@ function InstallBanner({ canInstall, isIos, installed, promptInstall }) {
     }
   })
 
-  // No mostrar si ya está instalada, si el usuario lo cerró, o si el
-  // navegador no permite instalar (ej. desktop sin soporte, iOS no-Safari).
-  if (installed || dismissed) return null
-  if (!canInstall && !isIos) return null
+  if (!isIos || installed || dismissed) return null
 
   const close = () => {
     try {
@@ -38,22 +36,10 @@ function InstallBanner({ canInstall, isIos, installed, promptInstall }) {
         <img src={ICON} alt="" className="h-12 w-12 shrink-0 rounded-xl" />
         <div className="min-w-0 flex-1 text-sm">
           <p className="font-semibold text-slate-900">Instalá Contentful Pocket Studio</p>
-          {isIos && !canInstall ? (
-            <p className="text-slate-600">
-              En Safari: tocá <b>Compartir</b> ⬆️ y luego <b>“Agregar a inicio”</b>.
-            </p>
-          ) : (
-            <p className="text-slate-600">Accedé más rápido desde tu pantalla de inicio.</p>
-          )}
+          <p className="text-slate-600">
+            En Safari: tocá <b>Compartir</b> ⬆️ y luego <b>“Agregar a inicio”</b>.
+          </p>
         </div>
-        {canInstall && (
-          <button
-            onClick={promptInstall}
-            className="shrink-0 rounded-lg bg-blue-700 px-3 py-2 text-sm font-semibold text-white transition hover:bg-blue-800"
-          >
-            Instalar
-          </button>
-        )}
         <button
           onClick={close}
           aria-label="Cerrar"
@@ -63,19 +49,6 @@ function InstallBanner({ canInstall, isIos, installed, promptInstall }) {
         </button>
       </div>
     </div>
-  )
-}
-
-// Botón compacto en la barra superior (siempre disponible en Android).
-function InstallButton({ canInstall, promptInstall }) {
-  if (!canInstall) return null
-  return (
-    <button
-      onClick={promptInstall}
-      className="rounded-lg bg-white px-3 py-1.5 text-sm font-semibold text-blue-800 shadow transition hover:bg-blue-50"
-    >
-      ⬇️ Instalar app
-    </button>
   )
 }
 
@@ -135,11 +108,10 @@ export default function App() {
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-50 text-slate-900">
-      <header className="flex items-center justify-between bg-blue-800 px-5 py-3.5 shadow">
+      <header className="bg-blue-800 px-5 py-3.5 shadow">
         <NavLink to="/" className="text-lg font-bold text-white hover:opacity-90">
           📘 Contentful Pocket Studio
         </NavLink>
-        <InstallButton {...install} />
       </header>
 
       <div className="flex flex-1 flex-col md:flex-row">
