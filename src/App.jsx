@@ -1,5 +1,75 @@
+import { useEffect, useState } from 'react'
 import { Routes, Route, NavLink, Navigate, useParams } from 'react-router-dom'
 import { sections } from './content.js'
+
+// Botón para instalar la PWA. En Android/Chrome aparece cuando el navegador
+// dispara `beforeinstallprompt`. En iPhone ese evento no existe, así que
+// mostramos una ayuda breve para agregarla desde el menú Compartir de Safari.
+function InstallButton() {
+  const [deferred, setDeferred] = useState(null)
+  const [installed, setInstalled] = useState(false)
+  const [showIosHelp, setShowIosHelp] = useState(false)
+
+  useEffect(() => {
+    const onPrompt = (e) => {
+      e.preventDefault()
+      setDeferred(e)
+    }
+    const onInstalled = () => {
+      setInstalled(true)
+      setDeferred(null)
+    }
+    window.addEventListener('beforeinstallprompt', onPrompt)
+    window.addEventListener('appinstalled', onInstalled)
+    if (window.matchMedia('(display-mode: standalone)').matches) setInstalled(true)
+    return () => {
+      window.removeEventListener('beforeinstallprompt', onPrompt)
+      window.removeEventListener('appinstalled', onInstalled)
+    }
+  }, [])
+
+  if (installed) return null
+
+  const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent)
+
+  // Android/Chrome: botón nativo de instalación.
+  if (deferred) {
+    return (
+      <button
+        onClick={async () => {
+          deferred.prompt()
+          await deferred.userChoice
+          setDeferred(null)
+        }}
+        className="rounded-lg bg-white px-3 py-1.5 text-sm font-semibold text-blue-800 shadow transition hover:bg-blue-50"
+      >
+        ⬇️ Instalar app
+      </button>
+    )
+  }
+
+  // iPhone: no hay evento; mostramos instrucciones.
+  if (isIos) {
+    return (
+      <div className="relative">
+        <button
+          onClick={() => setShowIosHelp((v) => !v)}
+          className="rounded-lg bg-white px-3 py-1.5 text-sm font-semibold text-blue-800 shadow transition hover:bg-blue-50"
+        >
+          ⬇️ Instalar app
+        </button>
+        {showIosHelp && (
+          <div className="absolute right-0 z-10 mt-2 w-64 rounded-lg bg-white p-3 text-sm text-slate-700 shadow-lg">
+            En iPhone: tocá el botón <b>Compartir</b> ⬆️ de Safari y luego{' '}
+            <b>“Agregar a inicio”</b>.
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  return null
+}
 
 // Clases reutilizables para los links del menú lateral.
 function navClass({ isActive }) {
@@ -56,10 +126,11 @@ function Section() {
 export default function App() {
   return (
     <div className="flex min-h-screen flex-col bg-slate-50 text-slate-900">
-      <header className="bg-blue-800 px-5 py-3.5 shadow">
+      <header className="flex items-center justify-between bg-blue-800 px-5 py-3.5 shadow">
         <NavLink to="/" className="text-lg font-bold text-white hover:opacity-90">
           📘 Contentful Pocket Studio
         </NavLink>
+        <InstallButton />
       </header>
 
       <div className="flex flex-1 flex-col md:flex-row">
