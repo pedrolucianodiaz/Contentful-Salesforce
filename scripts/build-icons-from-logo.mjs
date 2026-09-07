@@ -140,3 +140,8 @@ writeFileSync(join(outDir, 'icon-512.png'), makeIcon(512, '/tmp/logo-410.png'))
 console.log('Generado icon-512.png')
 writeFileSync(join(outDir, 'icon-192.png'), makeIcon(192, '/tmp/logo-154.png'))
 console.log('Generado icon-192.png')
+
+// apple-touch-icon (iPhone/iPad). iOS lo pide en la carpeta public raíz y le
+// aplica sus propias esquinas redondeadas, por eso va full-bleed (sin transparencia).
+writeFileSync(join(__dirname, '..', 'public', 'apple-touch-icon.png'), makeIcon(180, '/tmp/logo-144.png'))
+console.log('Generado apple-touch-icon.png')
