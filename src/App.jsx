@@ -1,77 +1,84 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Routes, Route, NavLink, Navigate, useParams } from 'react-router-dom'
 import { sections } from './content.js'
+import { useInstallPrompt } from './useInstallPrompt.js'
 
-// Botón para instalar la PWA. En Android/Chrome aparece cuando el navegador
-// dispara `beforeinstallprompt`. En iPhone ese evento no existe, así que
-// mostramos una ayuda breve para agregarla desde el menú Compartir de Safari.
-function InstallButton() {
-  const [deferred, setDeferred] = useState(null)
-  const [installed, setInstalled] = useState(false)
-  const [showIosHelp, setShowIosHelp] = useState(false)
+const ICON = `${import.meta.env.BASE_URL}icons/icon-192.png`
+const DISMISS_KEY = 'pwa-install-dismissed'
+const DISMISS_DAYS = 7
 
-  useEffect(() => {
-    const onPrompt = (e) => {
-      e.preventDefault()
-      setDeferred(e)
+// Banner-popup que aparece abajo invitando a instalar la app.
+function InstallBanner({ canInstall, isIos, installed, promptInstall }) {
+  const [dismissed, setDismissed] = useState(() => {
+    try {
+      const t = localStorage.getItem(DISMISS_KEY)
+      return !!t && Date.now() - Number(t) < DISMISS_DAYS * 86400000
+    } catch {
+      return false
     }
-    const onInstalled = () => {
-      setInstalled(true)
-      setDeferred(null)
+  })
+
+  // No mostrar si ya está instalada, si el usuario lo cerró, o si el
+  // navegador no permite instalar (ej. desktop sin soporte, iOS no-Safari).
+  if (installed || dismissed) return null
+  if (!canInstall && !isIos) return null
+
+  const close = () => {
+    try {
+      localStorage.setItem(DISMISS_KEY, String(Date.now()))
+    } catch {
+      /* ignorar */
     }
-    window.addEventListener('beforeinstallprompt', onPrompt)
-    window.addEventListener('appinstalled', onInstalled)
-    if (window.matchMedia('(display-mode: standalone)').matches) setInstalled(true)
-    return () => {
-      window.removeEventListener('beforeinstallprompt', onPrompt)
-      window.removeEventListener('appinstalled', onInstalled)
-    }
-  }, [])
-
-  if (installed) return null
-
-  const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent)
-
-  // Android/Chrome: botón nativo de instalación.
-  if (deferred) {
-    return (
-      <button
-        onClick={async () => {
-          deferred.prompt()
-          await deferred.userChoice
-          setDeferred(null)
-        }}
-        className="rounded-lg bg-white px-3 py-1.5 text-sm font-semibold text-blue-800 shadow transition hover:bg-blue-50"
-      >
-        ⬇️ Instalar app
-      </button>
-    )
+    setDismissed(true)
   }
 
-  // iPhone: no hay evento; mostramos instrucciones.
-  if (isIos) {
-    return (
-      <div className="relative">
-        <button
-          onClick={() => setShowIosHelp((v) => !v)}
-          className="rounded-lg bg-white px-3 py-1.5 text-sm font-semibold text-blue-800 shadow transition hover:bg-blue-50"
-        >
-          ⬇️ Instalar app
-        </button>
-        {showIosHelp && (
-          <div className="absolute right-0 z-10 mt-2 w-64 rounded-lg bg-white p-3 text-sm text-slate-700 shadow-lg">
-            En iPhone: tocá el botón <b>Compartir</b> ⬆️ de Safari y luego{' '}
-            <b>“Agregar a inicio”</b>.
-          </div>
+  return (
+    <div className="fixed inset-x-0 bottom-0 z-50 p-3">
+      <div className="mx-auto flex max-w-md items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-2xl">
+        <img src={ICON} alt="" className="h-12 w-12 shrink-0 rounded-xl" />
+        <div className="min-w-0 flex-1 text-sm">
+          <p className="font-semibold text-slate-900">Instalá Contentful Pocket Studio</p>
+          {isIos && !canInstall ? (
+            <p className="text-slate-600">
+              En Safari: tocá <b>Compartir</b> ⬆️ y luego <b>“Agregar a inicio”</b>.
+            </p>
+          ) : (
+            <p className="text-slate-600">Accedé más rápido desde tu pantalla de inicio.</p>
+          )}
+        </div>
+        {canInstall && (
+          <button
+            onClick={promptInstall}
+            className="shrink-0 rounded-lg bg-blue-700 px-3 py-2 text-sm font-semibold text-white transition hover:bg-blue-800"
+          >
+            Instalar
+          </button>
         )}
+        <button
+          onClick={close}
+          aria-label="Cerrar"
+          className="shrink-0 rounded-md px-2 py-1 text-lg leading-none text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+        >
+          ✕
+        </button>
       </div>
-    )
-  }
-
-  return null
+    </div>
+  )
 }
 
-// Clases reutilizables para los links del menú lateral.
+// Botón compacto en la barra superior (siempre disponible en Android).
+function InstallButton({ canInstall, promptInstall }) {
+  if (!canInstall) return null
+  return (
+    <button
+      onClick={promptInstall}
+      className="rounded-lg bg-white px-3 py-1.5 text-sm font-semibold text-blue-800 shadow transition hover:bg-blue-50"
+    >
+      ⬇️ Instalar app
+    </button>
+  )
+}
+
 function navClass({ isActive }) {
   return [
     'block rounded-lg px-3 py-2 text-sm transition',
@@ -124,13 +131,15 @@ function Section() {
 }
 
 export default function App() {
+  const install = useInstallPrompt()
+
   return (
     <div className="flex min-h-screen flex-col bg-slate-50 text-slate-900">
       <header className="flex items-center justify-between bg-blue-800 px-5 py-3.5 shadow">
         <NavLink to="/" className="text-lg font-bold text-white hover:opacity-90">
           📘 Contentful Pocket Studio
         </NavLink>
-        <InstallButton />
+        <InstallButton {...install} />
       </header>
 
       <div className="flex flex-1 flex-col md:flex-row">
@@ -150,6 +159,8 @@ export default function App() {
           </Routes>
         </main>
       </div>
+
+      <InstallBanner {...install} />
     </div>
   )
 }
