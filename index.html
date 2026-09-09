@@ -5,6 +5,12 @@
     <link rel="icon" type="image/svg+xml" href="/Contentful-Salesforce/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#0a3ea1" />
+    <!-- Adelantamos la conexión (DNS + TLS) a los dominios de Vimeo para que el
+         video empiece a cargar más rápido. -->
+    <link rel="preconnect" href="https://player.vimeo.com" crossorigin />
+    <link rel="preconnect" href="https://i.vimeocdn.com" crossorigin />
+    <link rel="preconnect" href="https://f.vimeocdn.com" crossorigin />
+    <link rel="dns-prefetch" href="https://player.vimeo.com" />
     <!-- Soporte PWA para iPhone / iPad (Safari ignora el manifest para el ícono) -->
     <link rel="apple-touch-icon" href="/Contentful-Salesforce/apple-touch-icon.png" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
