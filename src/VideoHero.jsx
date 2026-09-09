@@ -1,32 +1,26 @@
 import { useRef } from 'react'
 import { motion, useScroll, useTransform } from 'framer-motion'
 
-// ID del video de YouTube a usar como fondo.
-const YT_ID = 'TNE9OAXP4R0'
+// ID del video de Vimeo a usar como fondo.
+const VIMEO_ID = '470215251'
 
-// Parámetros de fondo: autoplay, silenciado, en loop, sin controles, en línea
-// (iPhone) y sin subtítulos de YouTube.
-const YT_SRC =
-  `https://www.youtube-nocookie.com/embed/${YT_ID}` +
-  `?autoplay=1&mute=1&loop=1&playlist=${YT_ID}` +
-  `&controls=0&showinfo=0&modestbranding=1&rel=0` +
-  `&playsinline=1&disablekb=1&fs=0&iv_load_policy=3&cc_load_policy=0`
+// Modo "background" de Vimeo: autoplay, loop, silenciado y sin controles.
+const VIMEO_SRC =
+  `https://player.vimeo.com/video/${VIMEO_ID}` +
+  `?background=1&autoplay=1&loop=1&muted=1&autopause=0&playsinline=1`
 
-// Video que cubre todo su contenedor. El `scale`/`translateY` extra recorta la
-// franja inferior donde el video trae subtítulos quemados.
+// Video que cubre todo su contenedor (aspecto 16:9 centrado).
 function VideoCover() {
   return (
     <iframe
       title="Video de fondo"
-      src={YT_SRC}
-      allow="autoplay; encrypted-media; picture-in-picture"
+      src={VIMEO_SRC}
+      allow="autoplay; fullscreen; picture-in-picture"
       className="pointer-events-none absolute left-1/2 top-1/2"
       style={{
         width: 'max(177.78vh, 100vw)',
         height: 'max(56.25vw, 100vh)',
-        // -57% (en vez de -50%) sube el video; scale(1.3) hace zoom.
-        // Juntos ocultan los subtítulos pegados del borde inferior.
-        transform: 'translate(-50%, -57%) scale(1.3)',
+        transform: 'translate(-50%, -50%) scale(1.02)',
       }}
     />
   )
