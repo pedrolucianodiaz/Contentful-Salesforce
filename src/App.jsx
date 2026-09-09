@@ -31,7 +31,10 @@ function InstallBanner({ isIos, installed }) {
   }
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-50 p-3">
+    <div
+      className="fixed inset-x-0 bottom-0 z-50 px-3 pt-3"
+      style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 0.75rem)' }}
+    >
       <div className="mx-auto flex max-w-md items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-2xl">
         <img src={ICON} alt="" className="h-12 w-12 shrink-0 rounded-xl" />
         <div className="min-w-0 flex-1 text-sm">
