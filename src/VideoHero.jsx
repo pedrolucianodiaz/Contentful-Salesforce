@@ -1,22 +1,56 @@
-import { useRef } from 'react'
+import { useRef, useEffect } from 'react'
 import { motion, useScroll, useTransform } from 'framer-motion'
+import Player from '@vimeo/player'
 
-// ID del video de Vimeo a usar como fondo.
-const VIMEO_ID = '470215251'
+// Videos de Vimeo. El 1º arranca en 0:35; cuando termina, se carga el 2º en loop.
+const VIDEO_1 = 470215251
+const VIDEO_2 = 360367957
+const START_1 = 35 // segundos
 
-// Modo "background" de Vimeo: autoplay, loop, silenciado y sin controles.
-const VIMEO_SRC =
-  `https://player.vimeo.com/video/${VIMEO_ID}` +
-  `?background=1&autoplay=1&loop=1&muted=1&autopause=0&playsinline=1`
-
-// Video que cubre todo su contenedor (aspecto 16:9 centrado).
+// Video de fondo controlado con el SDK de Vimeo: silenciado, sin controles,
+// arranca en 0:35 y encadena el segundo video al terminar.
 function VideoCover() {
+  const mountRef = useRef(null)
+
+  useEffect(() => {
+    let cancelled = false
+    const player = new Player(mountRef.current, {
+      id: VIDEO_1,
+      autoplay: true,
+      muted: true,
+      controls: false,
+      loop: false,
+      playsinline: true,
+      responsive: false,
+    })
+
+    player.ready().then(() => {
+      if (!cancelled) player.setCurrentTime(START_1).catch(() => {})
+    })
+
+    const onEnded = async () => {
+      try {
+        await player.loadVideo(VIDEO_2)
+        await player.setMuted(true)
+        await player.setLoop(true) // el 2º queda en loop
+        await player.play()
+      } catch {
+        /* ignorar */
+      }
+    }
+    player.on('ended', onEnded)
+
+    return () => {
+      cancelled = true
+      player.off('ended', onEnded)
+      player.destroy().catch(() => {})
+    }
+  }, [])
+
   return (
-    <iframe
-      title="Video de fondo"
-      src={VIMEO_SRC}
-      allow="autoplay; fullscreen; picture-in-picture"
-      className="pointer-events-none absolute left-1/2 top-1/2"
+    <div
+      ref={mountRef}
+      className="pointer-events-none absolute left-1/2 top-1/2 [&>iframe]:absolute [&>iframe]:inset-0 [&>iframe]:h-full [&>iframe]:w-full"
       style={{
         width: 'max(177.78vh, 100vw)',
         height: 'max(56.25vw, 100vh)',
